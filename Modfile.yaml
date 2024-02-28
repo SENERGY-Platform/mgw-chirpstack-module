@@ -2,7 +2,7 @@
 modfileVersion: "v1"
 id: github.com/SENERGY-Platform/mgw-chirpstack-module
 name: Chirpstack (LoRaWAN)
-version: v0.0.8
+version: v0.0.9
 type: device-connector
 deploymentType: single
 license: "Apache License 2.0"
@@ -39,6 +39,9 @@ services:
       - name: GUI
         port: 8080
         extPath: "gui"
+    ports: # Woraround for absoulte paths bug
+      - port: 8080
+        hostPort: 8096
     requiredServices:
       - postgres
       - redis
