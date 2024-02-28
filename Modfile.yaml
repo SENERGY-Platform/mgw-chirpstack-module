@@ -14,6 +14,8 @@ dependencies:
         - refVar: MQTT_BROKER_HOST
           services:
             - chirpstack
+            - chirpstack-gateway-bridge
+            - chirpstack-gateway-bridge-basicstation
 serviceReferences:
   postgres:
     - refVar: POSTGRESQL_HOST
