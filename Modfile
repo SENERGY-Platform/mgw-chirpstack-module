@@ -1,0 +1,110 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/SENERGY-Platform/mgw-modfile-lib/main/schema/v1.json
+modfileVersion: "v1"
+id: github.com/SENERGY-Platform/mgw-chirpstack-module
+name: Chirpstack Module (LoRaWAN)
+version: v0.0.1
+type: device-connector
+deploymentType: single
+license: "Apache License 2.0"
+dependencies:
+  github.com/SENERGY-Platform/mgw-mqtt-broker:
+    version: <v2.0.0
+    requiredServices:
+      broker:
+        - refVar: MQTT_BROKER_HOST
+          services:
+            - chirpstack
+serviceReferences:
+  postgres:
+    - refVar: POSTGRESQL_HOST
+      services:
+        - chirpstack
+  redis:
+    - refVar: REDIS_HOST
+      services:
+        - chirpstack
+services:
+  chirpstack:
+    name: chirpstack
+    image: ghcr.io/senergy-platform/mgw-chirpstack-module-chirpstack:v0.0.1
+    include:
+      - mountPoint: /etc/chirpstack
+        source: configuration/chirpstack
+    httpEndpoints:
+      - name: GUI
+        port: 8080
+        extPath: "gui"
+    requiredServices:
+      - postgres
+      - redis
+  chirpstack-gateway-bridge:
+    name: chirpstack-gateway-bridge
+    ports:
+      - hostPort: 1700
+        port: 1700
+        protocol: udp
+    image: chirpstack/chirpstack-gateway-bridge:4
+    include:
+      - mountPoint: /etc/chirpstack-gateway-bridge
+        source: configuration/chirpstack-gateway-bridge
+  chirpstack-gateway-bridge-basicstation:
+    name: chirpstack-gateway-bridge-basicstation
+    ports:
+      - hostPort: 3001
+        port: 3001
+    image: ghcr.io/senergy-platform/mgw-chirpstack-module-chirpstack-gateway-bridge-basicstation:v0.0.1
+  chirpstack-rest-api:
+    name: chirpstack-rest-api
+    image: ghcr.io/senergy-platform/mgw-chirpstack-module-chirpstack-rest-api:v0.0.1
+    #ports:
+    #- hostPort: 8090
+    #  port: 8090
+    requiredServices:
+      - chirpstack
+  postgres:
+    name: postgres
+    image: postgres:14-alpine
+    include:
+      - mountPoint: /docker-entrypoint-initdb.d
+        source: configuration/postgresql/initdb
+  redis:
+    name: redis
+    image: ghcr.io/senergy-platform/mgw-chirpstack-module-redis:v0.0.1
+configs:
+  INTEGRATION__MQTT__EVENT_TOPIC_TEMPLATE:
+    value: "eu868/gateway/{{ .GatewayID }}/event/{{ .EventType }}"
+    targets:
+      - refVar: INTEGRATION__MQTT__EVENT_TOPIC_TEMPLATE
+        services:
+          - chirpstack-gateway-bridge
+  INTEGRATION__MQTT__STATE_TOPIC_TEMPLATE:
+    value: eu868/gateway/{{ .GatewayID }}/state/{{ .StateType }}
+    targets:
+      - refVar: INTEGRATION__MQTT__STATE_TOPIC_TEMPLATE
+        services:
+          - chirpstack-gateway-bridge
+  INTEGRATION__MQTT__COMMAND_TOPIC_TEMPLATE:
+    value: eu868/gateway/{{ .GatewayID }}/command/#
+    targets:
+      - refVar: INTEGRATION__MQTT__COMMAND_TOPIC_TEMPLATE
+        services:
+          - chirpstack-gateway-bridge
+  POSTGRES_PASSWORD:
+    value: root
+    targets:
+      - refVar: POSTGRES_PASSWORD
+        services:
+          - postgres
+volumes:
+  lorawan-devices:
+    - mountPoint: /opt/lorawan-devices
+      services:
+        - chirpstack
+  postgres:
+    - mountPoint: /var/lib/postgresql/data
+      services:
+        - postgres
+  redis:
+    - mountPoint: /data
+      services:
+        - redis
