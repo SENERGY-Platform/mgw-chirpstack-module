@@ -1,3 +1,2 @@
 FROM chirpstack/chirpstack:4
-USER 0
 CMD ["-c", "/etc/chirpstack"]
