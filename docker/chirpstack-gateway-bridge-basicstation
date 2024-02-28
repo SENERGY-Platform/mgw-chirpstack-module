@@ -1,3 +1,2 @@
 FROM chirpstack/chirpstack-gateway-bridge:4
-USER 0
 CMD ["-c", "/etc/chirpstack-gateway-bridge/chirpstack-gateway-bridge-basicstation-eu868.toml"]
