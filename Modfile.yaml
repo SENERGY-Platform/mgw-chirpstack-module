@@ -2,7 +2,7 @@
 modfileVersion: "v1"
 id: github.com/SENERGY-Platform/mgw-chirpstack-module
 name: Chirpstack (LoRaWAN)
-version: v0.0.13
+version: v0.0.14
 type: device-connector
 deploymentType: single
 license: "Apache License 2.0"
@@ -31,7 +31,9 @@ serviceReferences:
 services:
   chirpstack:
     name: chirpstack
-    image: ghcr.io/senergy-platform/mgw-chirpstack-module-chirpstack:v0.0.8
+    image: chirpstack/chirpstack:4
+    runConfig:
+      command: "-c /etc/chirpstack"
     include:
       - mountPoint: /etc/chirpstack
         source: configuration/chirpstack
@@ -63,13 +65,17 @@ services:
     ports:
       - hostPort: 3001
         port: 3001
-    image: ghcr.io/senergy-platform/mgw-chirpstack-module-chirpstack-gateway-bridge-basicstation:v0.0.8
+    image: chirpstack/chirpstack-gateway-bridge:4
+    runConfig:
+      command: "-c /etc/chirpstack-gateway-bridge/chirpstack-gateway-bridge-basicstation-eu868.toml"
     include:
       - mountPoint: /etc/chirpstack-gateway-bridge
         source: configuration/chirpstack-gateway-bridge
   chirpstack-rest-api:
     name: chirpstack-rest-api
-    image: ghcr.io/senergy-platform/mgw-chirpstack-module-chirpstack-rest-api:v0.0.8
+    image: chirpstack/chirpstack-rest-api:4
+    runConfig:
+      command: "--server chirpstack:8080 --bind 0.0.0.0:8090 --insecure"
     #ports:
     #- hostPort: 8090
     #  port: 8090
@@ -83,7 +89,9 @@ services:
         source: configuration/postgresql/initdb
   redis:
     name: redis
-    image: ghcr.io/senergy-platform/mgw-chirpstack-module-redis:v0.0.8
+    image: redis:7-alpine
+    runConfig:
+      command: "redis-server --save 300 1 --save 60 100 --appendonly no"
 configs:
   INTEGRATION__MQTT__EVENT_TOPIC_TEMPLATE:
     value: "eu868/gateway/{{ .GatewayID }}/event/{{ .EventType }}"
